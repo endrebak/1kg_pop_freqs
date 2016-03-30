@@ -1,0 +1,51 @@
+from os import environ
+environ['TMUX'] # will raise keyerror if not within tmux session
+
+import pandas as pd
+
+PANEL_FILE = "data/integrated_call_samples_v3.20130502.ALL.panel"
+CHROMOSOME_FILES = "data/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
+
+rule all:
+    input:
+        expand("tmp/{chromosome}.frq.strat", chromosome=["chr21", "chr22"])
+
+rule create_bed_files:
+    input:
+        infile = CHROMOSOME_FILES
+    output:
+        "tmp/{chromosome}.bed",
+        "tmp/{chromosome}.bim",
+        "tmp/{chromosome}.fam"
+    shell:
+        "plink --vcf {input.infile} --snps-only --make-bed --maf 0.01 --out tmp/{wildcards.chromosome}"
+
+rule add_pop_to_fam_files:
+    input:
+        infile = "tmp/{chromosome}.fam",
+        panel = PANEL_FILE
+    output:
+        outfile = "tmp/{chromosome}_pop.fam"
+    run:
+        panel = pd.read_table(input.panel, sep="\s+", header=0, index_col=0)
+        fam_file = pd.read_table(input.infile, sep="\s+", header=None, index_col=0)
+
+        df = panel.join(fam_file)
+        df = df.reset_index()
+
+        df = df.drop(["sample", "super_pop", "gender"], axis=1)
+
+        df.to_csv(output.outfile, header=False, index=False, sep=" ")
+
+rule population_frequencies:
+    input:
+        fam = "tmp/{chromosome}_pop.fam",
+        bed = "tmp/{chromosome}.bed",
+        bim =  "tmp/{chromosome}.bim"
+
+    output:
+        outfile = "tmp/{chromosome}.frq.strat"
+    run:
+        outfile_prefix = output.outfile.split(".")[0]
+
+        shell("plink --bed {input.bed} --bim {input.bim} --fam {input.fam} --freq --family --out {outfile_prefix}")
