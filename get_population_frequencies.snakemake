@@ -6,9 +6,11 @@ import pandas as pd
 PANEL_FILE = "data/integrated_call_samples_v3.20130502.ALL.panel"
 CHROMOSOME_FILES = "data/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
 
+chromosomes = ["chr{}".format(i) for i in list(range(1, 23)) + ["X", "Y"]]
+
 rule all:
     input:
-        expand("tmp/{chromosome}.csv", chromosome=["chr21", "chr22"])
+        expand("results/{chromosome}.csv", chromosome=["chr21", "chr22"])
 
 rule create_bed_files:
     input:
@@ -53,12 +55,12 @@ rule arrange_data:
     input:
         infile = "tmp/{chromosome}.frq.strat"
     output:
-        outfile = "tmp/{chromosome}.csv"
+        outfile = "results/{chromosome}.csv"
     run:
         df = pd.read_table(input.infile, sep="\s+", header=0)
         df = df.drop(["MAC", "NCHROBS"] , axis=1) # + ["CHR", "SNP", "A1", "A2"]
 
         df = pd.pivot_table(df, index=["CHR", "SNP", "A1", "A2"], columns=["CLST"], values="MAF")#columns="CLST", values="MAF") #=)
 
-        df.to_csv(output.outfile, sep=" ")
+        df.to_csv(output.outfile, sep=",", float_format='%.4f')
 
