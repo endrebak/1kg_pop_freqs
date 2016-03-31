@@ -10,7 +10,7 @@ chromosomes = ["chr{}".format(i) for i in list(range(1, 23)) + ["X", "Y"]]
 
 rule all:
     input:
-        expand("results/{chromosome}.csv", chromosome=["chr21", "chr22"])
+        expand("results/{chromosome}.csv", chromosome=chromosomes)
 
 rule create_bed_files:
     input:
@@ -63,4 +63,3 @@ rule arrange_data:
         df = pd.pivot_table(df, index=["CHR", "SNP", "A1", "A2"], columns=["CLST"], values="MAF")#columns="CLST", values="MAF") #=)
 
         df.to_csv(output.outfile, sep=",", float_format='%.4f')
-
