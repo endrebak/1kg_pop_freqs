@@ -12,15 +12,21 @@ rule all:
     input:
         expand("results/{chromosome}_{maf}.csv", chromosome=chromosomes, maf=["01", "0001"])
 
+rule create_dot_file:
+    output:
+        outfile = "tmp/dot.dot"
+    shell: "echo '.' > {output.outfile}"
+
 rule create_bed_files:
     input:
-        infile = CHROMOSOME_FILES
+        infile = CHROMOSOME_FILES,
+        bad_snps = "tmp/dot.dot"
     output:
         "tmp/{chromosome}_{maf}.bed",
         "tmp/{chromosome}_{maf}.bim",
         "tmp/{chromosome}_{maf}.fam"
     shell:
-        "plink --vcf {input.infile} --snps-only --make-bed --maf 0.{wildcards.maf} --out tmp/{wildcards.chromosome}"
+        "plink --vcf {input.infile} --snps-only --exclude {input.bad_snps} --make-bed --maf 0.{wildcards.maf} --out tmp/{wildcards.chromosome}"
 
 rule add_pop_to_fam_files:
     input:
@@ -58,8 +64,8 @@ rule arrange_data:
         outfile = "results/{chromosome}_{maf}.csv"
     run:
         df = pd.read_table(input.infile, sep="\s+", header=0)
-        df = df.drop(["MAC", "NCHROBS"] , axis=1) # + ["CHR", "SNP", "A1", "A2"]
+        df = df.drop(["MAC", "NCHROBS"] , axis=1) 
 
-        df = pd.pivot_table(df, index=["CHR", "SNP", "A1", "A2"], columns=["CLST"], values="MAF")#columns="CLST", values="MAF") #=)
+        df = pd.pivot_table(df, index=["CHR", "SNP", "A1", "A2"], columns=["CLST"], values="MAF")
 
         df.to_csv(output.outfile, sep=",", float_format='%.4f')
