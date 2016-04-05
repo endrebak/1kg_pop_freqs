@@ -26,7 +26,7 @@ rule create_bed_files:
         "tmp/{chromosome}_{maf}.bim",
         "tmp/{chromosome}_{maf}.fam"
     shell:
-        "plink --vcf {input.infile} --snps-only --exclude {input.bad_snps} --make-bed --maf 0.{wildcards.maf} --out tmp/{wildcards.chromosome}"
+        "plink --vcf {input.infile} --snps-only --exclude {input.bad_snps} --make-bed --maf 0.{wildcards.maf} --out tmp/{wildcards.chromosome}_{wildcards.maf}"
 
 rule add_pop_to_fam_files:
     input:
