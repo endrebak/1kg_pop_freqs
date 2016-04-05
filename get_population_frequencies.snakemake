@@ -6,28 +6,28 @@ import pandas as pd
 PANEL_FILE = "data/integrated_call_samples_v3.20130502.ALL.panel"
 CHROMOSOME_FILES = "data/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
 
-chromosomes = ["chr{}".format(i) for i in list(range(1, 23)) + ["X", "Y"]]
+chromosomes = ["chr{}".format(i) for i in list(range(22, 23))] #+ ["X", "Y"]]
 
 rule all:
     input:
-        expand("results/{chromosome}.csv", chromosome=chromosomes)
+        expand("results/{chromosome}_{maf}.csv", chromosome=chromosomes, maf=["01", "0001"])
 
 rule create_bed_files:
     input:
         infile = CHROMOSOME_FILES
     output:
-        "tmp/{chromosome}.bed",
-        "tmp/{chromosome}.bim",
-        "tmp/{chromosome}.fam"
+        "tmp/{chromosome}_{maf}.bed",
+        "tmp/{chromosome}_{maf}.bim",
+        "tmp/{chromosome}_{maf}.fam"
     shell:
-        "plink --vcf {input.infile} --snps-only --make-bed --maf 0.01 --out tmp/{wildcards.chromosome}"
+        "plink --vcf {input.infile} --snps-only --make-bed --maf 0.{wildcards.maf} --out tmp/{wildcards.chromosome}"
 
 rule add_pop_to_fam_files:
     input:
-        infile = "tmp/{chromosome}.fam",
+        infile = "tmp/{chromosome}_{maf}.fam",
         panel = PANEL_FILE
     output:
-        outfile = "tmp/{chromosome}_pop.fam"
+        outfile = "tmp/{chromosome}_{maf}_pop.fam"
     run:
         panel = pd.read_table(input.panel, sep="\s+", header=0, index_col=0)
         fam_file = pd.read_table(input.infile, sep="\s+", header=None, index_col=0)
@@ -41,11 +41,11 @@ rule add_pop_to_fam_files:
 
 rule population_frequencies:
     input:
-        fam = "tmp/{chromosome}_pop.fam",
-        bed = "tmp/{chromosome}.bed",
-        bim =  "tmp/{chromosome}.bim"
+        fam = "tmp/{chromosome}_{maf}_pop.fam",
+        bed = "tmp/{chromosome}_{maf}.bed",
+        bim =  "tmp/{chromosome}_{maf}.bim"
     output:
-        outfile = "tmp/{chromosome}.frq.strat"
+        outfile = "tmp/{chromosome}_{maf}.frq.strat"
     run:
         outfile_prefix = output.outfile.split(".")[0]
 
@@ -53,9 +53,9 @@ rule population_frequencies:
 
 rule arrange_data:
     input:
-        infile = "tmp/{chromosome}.frq.strat"
+        infile = "tmp/{chromosome}_{maf}.frq.strat"
     output:
-        outfile = "results/{chromosome}.csv"
+        outfile = "results/{chromosome}_{maf}.csv"
     run:
         df = pd.read_table(input.infile, sep="\s+", header=0)
         df = df.drop(["MAC", "NCHROBS"] , axis=1) # + ["CHR", "SNP", "A1", "A2"]
