@@ -1,0 +1,24 @@
+
+from os import environ
+environ['TMUX'] # will raise keyerror if not within tmux session
+
+import pandas as pd
+
+PANEL_FILE = "data/integrated_call_samples_v3.20130502.ALL.panel"
+CHROMOSOME_FILES = "data/{chromosome}_vcf.gz"
+
+chromosomes = ["MT", "Y"] #+ ["X", "Y"]]
+
+rule all:
+    input:
+        expand("results/hetero/{chromosome}.", chromosome=chromosomes, maf=["01", "0001"])
+
+rule compute_snp_heterozygosity:
+    input:
+        infile = CHROMOSOME_FILES
+    output:
+        outfile = "tmp/hetero/{chromosome}.raw"
+    params:
+        out_prefix = "tmp/hetero/{chromosome}"
+    shell:
+        "plink --vcf {infile} --recode AD --out {params.out_prefix}"

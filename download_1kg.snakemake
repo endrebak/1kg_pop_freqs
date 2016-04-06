@@ -1,0 +1,38 @@
+from collections import defaultdict
+
+if platform == "linux" or platform == "linux2":
+    chromosomes = ["chr{}".format(i) for i in list(range(1, 23)) + ["X", "Y", "MT"]]
+elif platform == "darwin":
+    chromosomes = ["chr{}".format(i) for i in list(range(22, 23))] + ["MT", "Y"]
+
+file_locations = defaultdict(lambda: "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz")
+file_locations["Y"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz"
+file_locations["X"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz"
+file_locations["MT"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrMT.phase3_callmom.20130502.genotypes.vcf.gz"
+
+rule all:
+    expand("data/{chromosome}.vcf.gz", chromosomes=chromosomes)
+
+rule download_data:
+    output:
+        outfile = "data/{chromosome}.vcf.gz"
+    run:
+        url = file_locations[wildcards.chromosome]
+        shell("wget -P data {url}")
+
+        filename = url.split("/")[-1]
+        shell("mv data/{filename} {output.outfile}")
+
+
+# from subprocess import call
+
+# dl_file_template = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
+
+# for chromosome in ["chr{}".format(i) for i in list(range(1, 23)) + ["X", "Y"]]:
+#     dl_file = dl_file_template.format(chromosome=chromosome)
+#     command = "wget -P data {}".format(dl_file)
+#     call(command, shell=True)
+
+# call(
+#     "wget -P data ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel",
+#     shell=True)

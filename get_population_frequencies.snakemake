@@ -1,3 +1,5 @@
+
+from sys import platform 
 from os import environ
 environ['TMUX'] # will raise keyerror if not within tmux session
 
@@ -6,7 +8,12 @@ import pandas as pd
 PANEL_FILE = "data/integrated_call_samples_v3.20130502.ALL.panel"
 CHROMOSOME_FILES = "data/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
 
-chromosomes = ["chr{}".format(i) for i in list(range(1, 23))] #+ ["X", "Y"]]
+
+if platform == "linux" or platform == "linux2":
+    chromosomes = ["chr{}".format(i) for i in list(range(1, 23))] #+ ["X", "Y"]]
+elif platform == "darwin":
+    chromosomes = ["chr{}".format(i) for i in list(range(22, 23))] #+ ["X", "Y"]]
+    # OS Xchromosomes = ["chr{}".format(i) for i in list(range(1, 23))] #+ ["X", "Y"]]
 
 rule all:
     input:
