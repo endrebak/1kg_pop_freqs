@@ -1,3 +1,4 @@
+from sys import platform 
 from collections import defaultdict
 
 if platform == "linux" or platform == "linux2":
