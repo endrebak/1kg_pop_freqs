@@ -11,7 +11,8 @@ file_locations["X"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502
 file_locations["MT"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrMT.phase3_callmom.20130502.genotypes.vcf.gz"
 
 rule all:
-    expand("data/{chromosome}.vcf.gz", chromosomes=chromosomes)
+    input:
+        expand("data/{chromosome}.vcf.gz", chromosomes=chromosomes)
 
 rule download_data:
     output:
