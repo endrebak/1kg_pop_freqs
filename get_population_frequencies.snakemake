@@ -10,7 +10,7 @@ chromosomes = ["chr{}".format(i) for i in list(range(1, 23))] #+ ["X", "Y"]]
 
 rule all:
     input:
-        expand("results/{chromosome}_{maf}.csv", chromosome=chromosomes, maf=["01", "0001"])
+        expand("results/{chromosome}_{maf}.csv", chromosome=chromosomes, maf=["01", "001"])
 
 rule create_dot_file:
     output:
