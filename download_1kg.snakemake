@@ -1,4 +1,4 @@
-from sys import platform 
+from sys import platform
 from collections import defaultdict
 
 if platform == "linux" or platform == "linux2":
@@ -7,24 +7,37 @@ elif platform == "darwin":
     chromosomes = ["chr{}".format(i) for i in list(range(22, 23))] + ["MT", "Y"]
 
 file_locations = defaultdict(lambda: "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz")
-file_locations["Y"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz"
-file_locations["X"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz"
-file_locations["MT"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrMT.phase3_callmom.20130502.genotypes.vcf.gz"
+file_locations["chrY"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz"
+file_locations["chrX"] = (
+    "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz")
+file_locations["chrMT"] = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrMT.phase3_callmom-v0_4.20130502.genotypes.vcf.gz"
 
 rule all:
     input:
-        expand("data/{chromosome}.vcf.gz", chromosomes=chromosomes)
+        expand("data/{chromosome}.vcf.gz", chromosome=chromosomes),
+        "data/panel"
 
 rule download_data:
     output:
         outfile = "data/{chromosome}.vcf.gz"
     run:
         url = file_locations[wildcards.chromosome]
+        print(str(wildcards.chromosome) * 50)
+
+        if "{" in url:
+            url = url.format(chromosome=wildcards.chromosome)
+
+        print((url + " ") * 3)
         shell("wget -P data {url}")
 
         filename = url.split("/")[-1]
         shell("mv data/{filename} {output.outfile}")
 
+rule download_panel:
+    output:
+        "data/panel"
+    shell:
+        "curl ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel > {output[0]}"
 
 # from subprocess import call
 
@@ -38,3 +51,12 @@ rule download_data:
 # call(
 #     "wget -P data ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel",
 #     shell=True)
+
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrX.phase3_shapeit2_mvncall_integrated_v1b.20130502.genotypes.vcf.gz
+
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrY.phase3_integrated_v2a.20130502.genotypes.vcf.gz
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrY.phase3_integrated_v5a.20130502.genotypes.vcf.gz
+
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrMT.phase3_callmom-v0_4.20130502.genotypes.vcf.gz
+# ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chrMT.phase3_callmom.20130502.genotypes.vcf.gz

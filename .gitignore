@@ -1,4 +1,6 @@
 data/
+.#*
+old_results/
 results/
 tmp/
 *plink*

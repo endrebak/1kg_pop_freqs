@@ -1,12 +1,12 @@
 
-from sys import platform 
+from sys import platform
 from os import environ
 environ['TMUX'] # will raise keyerror if not within tmux session
 
 import pandas as pd
 
-PANEL_FILE = "data/integrated_call_samples_v3.20130502.ALL.panel"
-CHROMOSOME_FILES = "data/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz"
+PANEL_FILE = "data/panel"
+CHROMOSOME_FILES = "data/{chromosome}.vcf.gz"
 
 
 if platform == "linux" or platform == "linux2":
@@ -17,12 +17,14 @@ elif platform == "darwin":
 
 rule all:
     input:
-        expand("results/{chromosome}_{maf}.csv", chromosome=chromosomes, maf=["01", "001"])
+        expand("tmp/{chromosome}_{maf}_pop.fam", chromosome=chromosomes, maf=["01", "001"])
+
 
 rule create_dot_file:
     output:
         outfile = "tmp/dot.dot"
     shell: "echo '.' > {output.outfile}"
+
 
 rule create_bed_files:
     input:
@@ -33,14 +35,15 @@ rule create_bed_files:
         "tmp/{chromosome}_{maf}.bim",
         "tmp/{chromosome}_{maf}.fam"
     shell:
-        "plink --vcf {input.infile} --snps-only --exclude {input.bad_snps} --make-bed --maf 0.{wildcards.maf} --out tmp/{wildcards.chromosome}_{wildcards.maf}"
+        "plink --vcf {input.infile} --exclude {input.bad_snps} --make-bed --maf 0.{wildcards.maf} --out tmp/{wildcards.chromosome}_{wildcards.maf}"
+
 
 rule add_pop_to_fam_files:
     input:
         infile = "tmp/{chromosome}_{maf}.fam",
         panel = PANEL_FILE
     output:
-        outfile = "tmp/{chromosome}_{maf}_pop.fam"
+        outfile = "tmp/{chromosome}_{maf,\d+}_pop.fam"
     run:
         panel = pd.read_table(input.panel, sep="\s+", header=0, index_col=0)
         fam_file = pd.read_table(input.infile, sep="\s+", header=None, index_col=0)
@@ -71,7 +74,7 @@ rule arrange_data:
         outfile = "results/{chromosome}_{maf}.csv"
     run:
         df = pd.read_table(input.infile, sep="\s+", header=0)
-        df = df.drop(["MAC", "NCHROBS"] , axis=1) 
+        df = df.drop(["MAC", "NCHROBS"] , axis=1)
 
         df = pd.pivot_table(df, index=["CHR", "SNP", "A1", "A2"], columns=["CLST"], values="MAF")
 
